@@ -1,4 +1,4 @@
-const CACHE = 'rbtc-diet-v1';
+const CACHE = 'rbtc-diet-v2';
 const FILES = ['/', '/index.html', '/style.css', '/app.js', '/manifest.json'];
 
 self.addEventListener('install', e => {
