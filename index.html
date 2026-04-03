@@ -1,0 +1,215 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>RBTC 飲食份量計算</title>
+  <link rel="manifest" href="manifest.json">
+  <link rel="stylesheet" href="style.css">
+  <meta name="theme-color" content="#0f1117">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="RBTC 飲食">
+</head>
+<body>
+
+  <!-- ── 密碼頁 ── -->
+  <div id="lock-screen">
+    <div class="lock-card">
+      <div class="lock-logo">🥗</div>
+      <h1>RBTC 飲食工具</h1>
+      <p class="lock-sub">館內教練專用</p>
+      <input type="password" id="pwd-input" placeholder="請輸入密碼" autocomplete="off">
+      <button class="btn-primary full" onclick="checkPassword()">進入</button>
+      <p id="pwd-err" class="err-msg" hidden>密碼錯誤，請再試一次</p>
+    </div>
+  </div>
+
+  <!-- ── 主應用 ── -->
+  <div id="app" hidden>
+
+    <header>
+      <span id="header-title">🥗 飲食份量計算</span>
+    </header>
+
+    <!-- 計算機 -->
+    <div id="tab-calc" class="tab active">
+      <div class="scroll">
+
+        <!-- 輸入表單 -->
+        <section class="card">
+          <h2>基本資料</h2>
+
+          <div class="field">
+            <label>性別</label>
+            <div class="btn-group">
+              <button class="tog active" id="btn-male" onclick="setGender('male')">♂ 男</button>
+              <button class="tog" id="btn-female" onclick="setGender('female')">♀ 女</button>
+            </div>
+          </div>
+
+          <div class="row3">
+            <div class="field">
+              <label>體重 (kg)</label>
+              <input type="number" id="inp-weight" placeholder="70" min="30" max="200" step="0.1">
+            </div>
+            <div class="field">
+              <label>身高 (cm)</label>
+              <input type="number" id="inp-height" placeholder="170" min="120" max="230">
+            </div>
+            <div class="field">
+              <label>年齡</label>
+              <input type="number" id="inp-age" placeholder="30" min="10" max="100">
+            </div>
+          </div>
+
+          <div class="field">
+            <label>活動量</label>
+            <div class="activity-group">
+              <button class="act-btn active" onclick="setActivity(0)">久坐<br><small>無運動</small></button>
+              <button class="act-btn" onclick="setActivity(1)">輕度<br><small>週 1-2 天</small></button>
+              <button class="act-btn" onclick="setActivity(2)">中度<br><small>週 3-5 天</small></button>
+              <button class="act-btn" onclick="setActivity(3)">高度<br><small>週 6-7 天</small></button>
+            </div>
+          </div>
+
+          <div class="field">
+            <label>乳製品偏好</label>
+            <div class="btn-group">
+              <button class="tog active" id="btn-dairy-y" onclick="setDairy(true)">有乳製品</button>
+              <button class="tog" id="btn-dairy-n" onclick="setDairy(false)">不吃乳製品</button>
+            </div>
+          </div>
+
+          <button class="btn-primary full" onclick="runCalc()">計算份量</button>
+        </section>
+
+        <!-- 結果 -->
+        <section class="card" id="results" hidden>
+          <h2>計算結果</h2>
+
+          <div class="tdee-row">
+            <div class="tdee-box">
+              <span class="tdee-label">TDEE 維持熱量</span>
+              <span class="tdee-val" id="res-tdee">—</span>
+              <span class="tdee-unit">kcal</span>
+            </div>
+            <div class="tdee-arrow">▶</div>
+            <div class="tdee-box accent">
+              <span class="tdee-label">減重目標熱量</span>
+              <span class="tdee-val" id="res-target">—</span>
+              <span class="tdee-unit">kcal</span>
+            </div>
+          </div>
+
+          <div class="portion-table">
+            <div class="pt-head">
+              <span>食物類別</span>
+              <span>份量</span>
+            </div>
+            <div class="pt-row" id="row-dairy">
+              <span>🥛 乳品類（低脂）</span>
+              <span id="val-dairy">—</span>
+            </div>
+            <div class="pt-row link" onclick="gotoExchange('protein-mid')">
+              <span>🥩 豆魚蛋肉（中脂）</span>
+              <span id="val-protein">—</span>
+            </div>
+            <div class="pt-row link" onclick="gotoExchange('grain')">
+              <span>🍚 全榖雜糧（飯）</span>
+              <span id="val-grain">—</span>
+            </div>
+            <div class="pt-row link" onclick="gotoExchange('vegetable')">
+              <span>🥦 蔬菜類</span>
+              <span id="val-veg">—</span>
+            </div>
+            <div class="pt-row link" onclick="gotoExchange('fruit')">
+              <span>🍎 水果類</span>
+              <span id="val-fruit">—</span>
+            </div>
+            <div class="pt-row link" onclick="gotoExchange('oil')">
+              <span>🫙 油脂與堅果</span>
+              <span id="val-oil">—</span>
+            </div>
+          </div>
+
+          <div class="macro-wrap">
+            <div class="macro-title">一日營養素總計</div>
+            <div class="macro-item">
+              <div class="macro-top">
+                <span>蛋白質</span>
+                <span><strong id="res-p">—</strong>g &nbsp;<em id="res-ppct">—%</em></span>
+              </div>
+              <div class="bar-bg"><div class="bar-fill prot" id="bar-p"></div></div>
+            </div>
+            <div class="macro-item">
+              <div class="macro-top">
+                <span>脂肪</span>
+                <span><strong id="res-f">—</strong>g &nbsp;<em id="res-fpct">—%</em></span>
+              </div>
+              <div class="bar-bg"><div class="bar-fill fat" id="bar-f"></div></div>
+            </div>
+            <div class="macro-item">
+              <div class="macro-top">
+                <span>碳水化合物</span>
+                <span><strong id="res-c">—</strong>g &nbsp;<em id="res-cpct">—%</em></span>
+              </div>
+              <div class="bar-bg"><div class="bar-fill carb" id="bar-c"></div></div>
+            </div>
+            <div class="kcal-total">合計 <strong id="res-kcal">—</strong> 大卡</div>
+          </div>
+
+          <div class="note-box">
+            ※ 本工具依據 Tina 營養師公式計算，僅供教練內部參考使用，不代表任何醫療行為。<br>
+            實際飲食計畫應依個人體質、健康狀況調整。<br>
+            點擊食物類別可查看飲食代換表。
+          </div>
+        </section>
+
+      </div>
+    </div>
+
+    <!-- 代換表 -->
+    <div id="tab-exchange" class="tab">
+      <div class="scroll">
+        <section class="card">
+          <h2>飲食代換表</h2>
+          <p class="sub-note">資料來源：衛生福利部國民健康署</p>
+
+          <div class="cat-grid">
+            <button class="cat-btn active" data-cat="grain" onclick="showCat('grain')">🌾<br>全榖雜糧</button>
+            <button class="cat-btn" data-cat="protein-low" onclick="showCat('protein-low')">🐟<br>豆魚蛋肉<br><small>低脂</small></button>
+            <button class="cat-btn" data-cat="protein-mid" onclick="showCat('protein-mid')">🥩<br>豆魚蛋肉<br><small>中脂</small></button>
+            <button class="cat-btn" data-cat="protein-high" onclick="showCat('protein-high')">🍖<br>豆魚蛋肉<br><small>高脂</small></button>
+            <button class="cat-btn" data-cat="dairy" onclick="showCat('dairy')">🥛<br>乳品類</button>
+            <button class="cat-btn" data-cat="vegetable" onclick="showCat('vegetable')">🥦<br>蔬菜類</button>
+            <button class="cat-btn" data-cat="fruit" onclick="showCat('fruit')">🍎<br>水果類</button>
+            <button class="cat-btn" data-cat="oil" onclick="showCat('oil')">🫙<br>油脂堅果</button>
+          </div>
+
+          <div id="cat-info" class="cat-info"></div>
+          <div id="food-list" class="food-list"></div>
+        </section>
+      </div>
+    </div>
+
+    <!-- 底部導覽 -->
+    <nav class="bottom-nav">
+      <button class="nav-btn active" id="nav-calc" onclick="switchTab('calc')">
+        🧮<br><small>計算機</small>
+      </button>
+      <button class="nav-btn" id="nav-exchange" onclick="switchTab('exchange')">
+        📋<br><small>代換表</small>
+      </button>
+    </nav>
+
+  </div>
+
+  <script src="app.js"></script>
+  <script>
+    if ('serviceWorker' in navigator) {
+      navigator.serviceWorker.register('sw.js');
+    }
+  </script>
+</body>
+</html>
