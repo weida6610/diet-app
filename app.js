@@ -1,7 +1,7 @@
 // ==========================================
 // 設定區 — 修改密碼請改此處
 // ==========================================
-const APP_PASSWORD = 'rbtc1234';
+const APP_PASSWORD = 'rbtc66370279';
 
 // ==========================================
 // 狀態
@@ -14,7 +14,12 @@ const st = { gender: 'male', activity: 0, dairy: true };
 function checkPassword() {
   const val = document.getElementById('pwd-input').value;
   if (val === APP_PASSWORD) {
-    sessionStorage.setItem('rbtc_diet_auth', '1');
+    const remember = document.getElementById('pwd-remember').checked;
+    if (remember) {
+      localStorage.setItem('rbtc_diet_auth', '1');
+    } else {
+      sessionStorage.setItem('rbtc_diet_auth', '1');
+    }
     document.getElementById('lock-screen').hidden = true;
     document.getElementById('app').hidden = false;
     showCat('grain');
@@ -29,7 +34,7 @@ document.getElementById('pwd-input').addEventListener('keydown', e => {
   if (e.key === 'Enter') checkPassword();
 });
 
-if (sessionStorage.getItem('rbtc_diet_auth') === '1') {
+if (localStorage.getItem('rbtc_diet_auth') === '1' || sessionStorage.getItem('rbtc_diet_auth') === '1') {
   document.getElementById('lock-screen').hidden = true;
   document.getElementById('app').hidden = false;
   setTimeout(() => showCat('grain'), 0);
