@@ -93,3 +93,19 @@
 - Tina Excel 預設案例改動後：
   - 女 85kg / 170cm / 35歲 / 週 3-5 天，手動給予熱量 1400：油脂約 2.5 份。
   - 男 85kg / 170cm / 35歲 / 週 3-5 天，手動給予熱量 1900：油脂約 4 份。
+
+### 發佈
+
+- Commit：`743eab1 Align diet calculator with Tina balanced formula`
+- 已 push 到 `origin/main`。
+- Push 後本機 `main` 與 `origin/main` 同步，工作樹乾淨。
+
+### 下次開工
+
+- 從 `743eab1` 之後開始。
+- 優先人工測試本機或 GitHub Pages 實際畫面：
+  - 給予熱量留空時是否採用 `TDEE - 500`。
+  - `-500`、`-300` 快速按鈕是否符合教練預期。
+  - 外食代換表入口是否正常顯示。
+  - PWA 是否更新到 `rbtc-diet-v7`，手機端沒有吃到舊快取。
+- 若確認無誤，下一階段再討論付費學員版登入、權限與付款流程。
