@@ -65,36 +65,75 @@ function setDairy(v) {
 // ==========================================
 const ACTIVITY = [1.30, 1.38, 1.55, 1.73];
 
-// 每份營養素（源自 Tina 營養師試算表）
+// 每份營養素（源自 Tina 營養師均衡版試算表）
 const P = {
   dairy_low:   { p: 8,    f: 4,     c: 12,   k: 120   },
-  prot_mid:    { p: 7.24, f: 5.175, c: 0,    k: 77.6  },
-  grain_bowl:  { p: 8.7,  f: 0,     c: 65.2, k: 304.1 },
+  prot_mid:    { p: 7,    f: 5,     c: 0,    k: 75    },
+  grain_bowl:  { p: 8,    f: 0,     c: 60,   k: 280   },
   veg:         { p: 1,    f: 0,     c: 5,    k: 25    },
   fruit:       { p: 0,    f: 0,     c: 15,   k: 60    },
-  oil:         { p: 0,    f: 4.5,   c: 0,    k: 40.4  },
+  oil:         { p: 0,    f: 5,     c: 0,    k: 45    },
 };
 
 function calcBMR(gender, w, h, a) {
-  // Revised Harris-Benedict (1984)
+  // Tina 均衡版 Excel 使用的 Harris-Benedict 公式
   return gender === 'male'
-    ? 88.362 + 13.397 * w + 4.799 * h - 5.677 * a
-    : 447.593 + 9.247 * w + 3.098 * h - 4.330 * a;
+    ? 66 + 13.75 * w + 5 * h - 6.76 * a
+    : 655 + 9.6 * w + 1.8 * h - 4.7 * a;
+}
+
+function roundToStep(n, step) {
+  return Math.round(n / step) * step;
+}
+
+function clamp(n, min, max) {
+  return Math.max(min, Math.min(max, n));
+}
+
+function formatAmount(n) {
+  if (!Number.isFinite(n)) return '—';
+  return Number.isInteger(n) ? String(n) : n.toFixed(1).replace(/\.0$/, '');
+}
+
+function readBodyInputs() {
+  const w = parseFloat(document.getElementById('inp-weight').value);
+  const h = parseFloat(document.getElementById('inp-height').value);
+  const a = parseInt(document.getElementById('inp-age').value, 10);
+  return { w, h, a };
+}
+
+function getTDEE(w, h, a) {
+  return Math.round(calcBMR(st.gender, w, h, a) * ACTIVITY[st.activity]);
+}
+
+function fillTarget(delta) {
+  const { w, h, a } = readBodyInputs();
+  if (!w || !h || !a) {
+    alert('請先填寫體重、身高與年齡');
+    return;
+  }
+  const target = getTDEE(w, h, a) + delta;
+  document.getElementById('inp-target').value = Math.max(900, Math.round(target / 50) * 50);
 }
 
 function runCalc() {
-  const w = parseFloat(document.getElementById('inp-weight').value);
-  const h = parseFloat(document.getElementById('inp-height').value);
-  const a = parseInt(document.getElementById('inp-age').value);
+  const { w, h, a } = readBodyInputs();
+  const targetInput = parseFloat(document.getElementById('inp-target').value);
+  const hasTargetInput = Number.isFinite(targetInput);
 
   if (!w || !h || !a)            { alert('請填寫體重、身高與年齡'); return; }
   if (w < 30 || w > 200)         { alert('體重請填 30–200 kg'); return; }
   if (h < 120 || h > 230)        { alert('身高請填 120–230 cm'); return; }
   if (a < 10 || a > 100)         { alert('年齡請填 10–100 歲'); return; }
+  if (hasTargetInput && (targetInput < 900 || targetInput > 4000)) {
+    alert('給予熱量請填 900–4000 kcal');
+    return;
+  }
 
-  const bmr        = calcBMR(st.gender, w, h, a);
-  const tdee       = Math.round(bmr * ACTIVITY[st.activity]);
-  const target     = Math.round(tdee * 0.84);   // ~16% 熱量赤字
+  const tdee       = getTDEE(w, h, a);
+  const minus500   = Math.max(900, Math.round((tdee - 500) / 50) * 50);
+  const minus300   = Math.max(900, Math.round((tdee - 300) / 50) * 50);
+  const target     = hasTargetInput ? targetInput : minus500;
 
   const tP = target * 0.20 / 4;   // 蛋白質目標 (g)
   const tF = target * 0.30 / 9;   // 脂肪目標 (g)
@@ -110,18 +149,18 @@ function runCalc() {
   const fxC = vegN * P.veg.c + fruitN * P.fruit.c + dairyN * P.dairy_low.c;
   const fxK = vegN * P.veg.k + fruitN * P.fruit.k + dairyN * P.dairy_low.k;
 
-  // 全榖（碗） — 依剩餘碳水分配
-  const grain = Math.max(1, Math.min(8, Math.round((tC - fxC) / P.grain_bowl.c)));
+  // 全榖（碗） — 依剩餘碳水分配，四捨五入到 0.5 碗
+  const grain = clamp(roundToStep((tC - fxC) / P.grain_bowl.c, 0.5), 1, 8);
   const gK    = grain * P.grain_bowl.k;
   const gP    = grain * P.grain_bowl.p;
 
-  // 豆魚蛋肉（中脂） — 依剩餘蛋白質分配，使用 floor
-  const prot  = Math.max(2, Math.min(20, Math.floor((tP - fxP - gP) / P.prot_mid.p)));
+  // 豆魚蛋肉（中脂） — 依剩餘蛋白質分配，四捨五入到 0.5 份
+  const prot  = clamp(roundToStep((tP - fxP - gP) / P.prot_mid.p, 0.5), 2, 20);
   const prF   = prot * P.prot_mid.f;
   const prK   = prot * P.prot_mid.k;
 
-  // 油脂 — 依剩餘脂肪分配
-  const oil   = Math.max(0, Math.min(10, Math.round((tF - fxF - prF) / P.oil.f)));
+  // 油脂 — 依剩餘脂肪分配，四捨五入到 0.5 份
+  const oil   = clamp(roundToStep((tF - fxF - prF) / P.oil.f, 0.5), 0, 10);
   const oK    = oil * P.oil.k;
 
   // 總計
@@ -137,15 +176,18 @@ function runCalc() {
   // 更新 UI
   document.getElementById('res-tdee').textContent   = tdee;
   document.getElementById('res-target').textContent = target;
+  document.getElementById('res-minus500').textContent = minus500;
+  document.getElementById('res-minus300').textContent = minus300;
+  document.getElementById('res-deficit').textContent  = '-' + Math.max(0, tdee - target);
 
   const dRow = document.getElementById('row-dairy');
   dRow.style.display = st.dairy ? 'flex' : 'none';
   document.getElementById('val-dairy').textContent   = '1 份';
-  document.getElementById('val-protein').textContent = prot + ' 份';
-  document.getElementById('val-grain').textContent   = grain + ' 碗';
+  document.getElementById('val-protein').textContent = formatAmount(prot) + ' 份';
+  document.getElementById('val-grain').textContent   = formatAmount(grain) + ' 碗';
   document.getElementById('val-veg').textContent     = vegN + ' 份';
   document.getElementById('val-fruit').textContent   = fruitN + ' 份';
-  document.getElementById('val-oil').textContent     = oil + ' 份';
+  document.getElementById('val-oil').textContent     = formatAmount(oil) + ' 份';
 
   document.getElementById('res-p').textContent    = Math.round(totP);
   document.getElementById('res-f').textContent    = Math.round(totF);

@@ -82,6 +82,16 @@
             </div>
           </div>
 
+          <div class="field">
+            <label>給予熱量 (kcal)</label>
+            <div class="target-input-row">
+              <input type="number" id="inp-target" placeholder="留空使用 TDEE - 500" min="900" max="4000" step="50">
+              <button class="btn-secondary" onclick="fillTarget(-500)">-500</button>
+              <button class="btn-secondary" onclick="fillTarget(-300)">-300</button>
+            </div>
+            <p class="field-hint">依 Tina 表格邏輯，可手動指定黃色欄位「給予熱量」。</p>
+          </div>
+
           <button class="btn-primary full" onclick="runCalc()">計算份量</button>
         </section>
 
@@ -97,9 +107,24 @@
             </div>
             <div class="tdee-arrow">▶</div>
             <div class="tdee-box accent">
-              <span class="tdee-label">減重目標熱量</span>
+              <span class="tdee-label">給予熱量</span>
               <span class="tdee-val" id="res-target">—</span>
               <span class="tdee-unit">kcal</span>
+            </div>
+          </div>
+
+          <div class="target-summary">
+            <div>
+              <span>TDEE - 500</span>
+              <strong id="res-minus500">—</strong>
+            </div>
+            <div>
+              <span>TDEE - 300</span>
+              <strong id="res-minus300">—</strong>
+            </div>
+            <div>
+              <span>熱量差</span>
+              <strong id="res-deficit">—</strong>
             </div>
           </div>
 
@@ -163,6 +188,7 @@
           <div class="note-box">
             ※ 本工具依據 Tina 營養師公式計算，僅供教練內部參考使用，不代表任何醫療行為。<br>
             實際飲食計畫應依個人體質、健康狀況調整。<br>
+            油脂份數包含烹調油、堅果、醬料與外食隱藏油，不是額外建議再加的油。<br>
             點擊食物類別可查看飲食代換表。
           </div>
         </section>
@@ -175,7 +201,7 @@
       <div class="scroll">
         <section class="card">
           <h2>飲食代換表</h2>
-          <p class="sub-note">資料來源：衛生福利部國民健康署</p>
+          <p class="sub-note">資料來源：衛福部國健署 ＋ Tina 營養師實務經驗</p>
 
           <div class="cat-grid">
             <button class="cat-btn active" data-cat="grain" onclick="showCat('grain')">🌾<br>全榖雜糧</button>
@@ -186,6 +212,7 @@
             <button class="cat-btn" data-cat="vegetable" onclick="showCat('vegetable')">🥦<br>蔬菜類</button>
             <button class="cat-btn" data-cat="fruit" onclick="showCat('fruit')">🍎<br>水果類</button>
             <button class="cat-btn" data-cat="oil" onclick="showCat('oil')">🫙<br>油脂堅果</button>
+            <button class="cat-btn" data-cat="eating-out" onclick="showCat('eating-out')">🍱<br>外食</button>
           </div>
 
           <div id="cat-info" class="cat-info"></div>
